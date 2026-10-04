@@ -1,0 +1,239 @@
+# Weakness-family knowledge used by the quality checks (Section 3.3, Step 3) and by the
+# D2-D4 characterization (Section 3.2).  The paper specifies the categories (memory
+# operations, arithmetic operations, relevant API arguments; sources = parameters,
+# external-call returns, globals, locally read values; the deallocated pointer for UAF).
+#
+#   sink_calls:     callee name -> 1-based indices of the vulnerability-relevant
+#                   arguments ([] = all arguments)
+#   sink_operators: Joern operator names; [] = all operands
+#   source_calls:   calls whose RETURN value is an extra family-specific source
+#   sanitizer:      runtime checker (asan / ubsan / lsan) or null (static check only)
+#   sanitizer_errors: substrings of the sanitizer report that denote this family
+#   codeql_queries: query selectors relative to the codeql/cpp-queries 1.6.2 pack root
+
+common_sources:
+  # values returned by external calls are sources: every call whose callee is not defined
+  # in the unit (see tools/joern.py), plus these input calls even if a stub defines them
+  return_calls: [getenv, secure_getenv, getchar, fgetc, getc, getwchar, rand]
+  # calls that read external data into a buffer argument ("locally read values")
+  outparam_calls:
+    read: [2]
+    pread: [2]
+    recv: [2]
+    recvfrom: [2]
+    recvmsg: [2]
+    fread: [1]
+    fgets: [1]
+    gets: [1]
+    getline: [1]
+    getdelim: [1]
+    scanf: []
+    fscanf: []
+    sscanf: []
+    readlink: [2]
+  # parameters and global variables are always sources (see tools/joern.py)
+
+families:
+  buffer_overflow:
+    sink_calls:
+      memcpy: [3]
+      memmove: [3]
+      memset: [3]
+      strncpy: [3]
+      strncat: [3]
+      strcpy: [2]
+      strcat: [2]
+      stpcpy: [2]
+      sprintf: []
+      vsprintf: []
+      snprintf: [2]
+      gets: [1]
+      wcscpy: [2]
+      bcopy: [3]
+    sink_operators:
+      "<operator>.indirectIndexAccess": [2]
+      "<operator>.indirection": [1]
+    source_calls: []
+    sanitizer: asan
+    sanitizer_errors: [heap-buffer-overflow, stack-buffer-overflow, global-buffer-overflow,
+                       stack-buffer-underflow, dynamic-stack-buffer-overflow,
+                       container-overflow, negative-size-param, memcpy-param-overlap]
+    codeql_queries:
+      - Security/CWE/CWE-119
+      - Security/CWE/CWE-120
+      - Security/CWE/CWE-121
+      - Security/CWE/CWE-129
+      - Security/CWE/CWE-131
+      - experimental/Security/CWE/CWE-805/BufferAccessWithIncorrectLengthValue.ql
+      - experimental/Security/CWE/CWE-788/AccessOfMemoryLocationAfterEndOfBufferUsingStrlen.ql
+  null_dereference:
+    sink_calls: {}
+    sink_operators:
+      "<operator>.indirection": [1]
+      "<operator>.indirectFieldAccess": [1]
+      "<operator>.indirectIndexAccess": [1]
+    source_calls: [malloc, calloc, realloc, strdup, strndup, fopen, getenv, strchr, strrchr,
+                   strstr, memchr, bsearch, localtime, gmtime]
+    sanitizer: asan
+    sanitizer_errors: ["address points to the zero page", "null pointer"]
+    codeql_queries:
+      - Critical/MissingNullTest.ql
+      - Critical/InconsistentNullnessTesting.ql
+  use_after_free:
+    # Source: the deallocated pointer (argument of the deallocation call).
+    dealloc_calls: [free, "<operator>.delete", "<operator>.deleteArray", realloc]
+    sink_calls:
+      free: [1]
+      memcpy: []
+      memmove: []
+      memset: [1]
+      strcpy: []
+      strlen: [1]
+      printf: []
+      fprintf: []
+    sink_operators:
+      "<operator>.indirection": [1]
+      "<operator>.indirectFieldAccess": [1]
+      "<operator>.indirectIndexAccess": [1]
+      "<operator>.delete": []
+      "<operator>.deleteArray": []
+    source_calls: []
+    sanitizer: asan
+    sanitizer_errors: [heap-use-after-free, attempting double-free, double-free,
+                       stack-use-after-return, stack-use-after-scope]
+    codeql_queries:
+      - Security/CWE/CWE-416
+      - Critical/UseAfterFree.ql
+      - Critical/DoubleFree.ql
+      - experimental/Security/CWE/CWE-416/UseAfterExpiredLifetime.ql
+  integer_overflow:
+    sink_calls:
+      malloc: [1]
+      calloc: []
+      realloc: [2]
+      alloca: [1]
+    sink_operators:
+      "<operator>.multiplication": []
+      "<operator>.addition": []
+      "<operator>.subtraction": []
+      "<operator>.shiftLeft": []
+      "<operator>.assignmentMultiplication": []
+      "<operator>.assignmentPlus": []
+      "<operator>.assignmentMinus": []
+      "<operator>.postIncrement": []
+      "<operator>.preIncrement": []
+      "<operator>.postDecrement": []
+      "<operator>.preDecrement": []
+    source_calls: []
+    sanitizer: ubsan
+    sanitizer_errors: [signed integer overflow, unsigned integer overflow, "cannot be represented in type",
+                       shift exponent, left shift of, negation of]
+    codeql_queries:
+      - Security/CWE/CWE-190
+      - Security/CWE/CWE-191
+  command_injection:
+    sink_calls:
+      system: [1]
+      popen: [1]
+      execl: []
+      execlp: []
+      execle: []
+      execv: []
+      execvp: []
+      execve: []
+      execvpe: []
+    sink_operators: {}
+    source_calls: []
+    sanitizer: null
+    sanitizer_errors: []
+    codeql_queries:
+      - Security/CWE/CWE-078
+  sql_injection:
+    sink_calls:
+      mysql_query: [2]
+      mysql_real_query: [2]
+      sqlite3_exec: [2]
+      sqlite3_prepare: [2]
+      sqlite3_prepare_v2: [2]
+      sqlite3_prepare_v3: [2]
+      PQexec: [2]
+      PQsendQuery: [2]
+    sink_operators: {}
+    source_calls: []
+    sanitizer: null
+    sanitizer_errors: []
+    codeql_queries:
+      - Security/CWE/CWE-089
+  path_traversal:
+    sink_calls:
+      fopen: [1]
+      freopen: [1]
+      open: [1]
+      openat: [2]
+      creat: [1]
+      unlink: [1]
+      remove: [1]
+      rename: []
+      opendir: [1]
+      stat: [1]
+      lstat: [1]
+      access: [1]
+      chmod: [1]
+      mkdir: [1]
+      rmdir: [1]
+    sink_operators: {}
+    source_calls: []
+    sanitizer: null
+    sanitizer_errors: []
+    codeql_queries:
+      - Security/CWE/CWE-022
+  resource_leak:
+    # Sink: the function exit (return) reached while the acquired resource is live;
+    # source: the acquired resource.  Joern: flows from acquisition to return points
+    # and to the last uses of the resource.
+    acquire_calls: [malloc, calloc, realloc, strdup, strndup, fopen, fdopen, open, socket,
+                    opendir, popen, accept, "<operator>.new", "<operator>.newArray", mmap]
+    sink_calls: {}
+    sink_operators: {}
+    sink_returns: true
+    source_calls: []
+    sanitizer: lsan
+    sanitizer_errors: [detected memory leaks]
+    codeql_queries:
+      - Critical/MemoryNeverFreed.ql
+      - Critical/MemoryMayNotBeFreed.ql
+      - Critical/NewFreeMismatch.ql
+      - experimental/Security/CWE/CWE-401/MemoryLeakOnFailedCallToRealloc.ql
+  division_by_zero:
+    sink_calls: {}
+    sink_operators:
+      "<operator>.division": [2]
+      "<operator>.modulo": [2]
+      "<operator>.assignmentDivision": [2]
+      "<operator>.assignmentModulo": [2]
+    source_calls: []
+    sanitizer: ubsan
+    sanitizer_errors: [division by zero, "integer divide by zero", "FPE"]
+    codeql_queries:
+      - experimental/Security/CWE/CWE-369/DivideByZeroUsingReturnValue.ql
+  format_string:
+    sink_calls:
+      printf: [1]
+      vprintf: [1]
+      fprintf: [2]
+      vfprintf: [2]
+      dprintf: [2]
+      sprintf: [2]
+      vsprintf: [2]
+      snprintf: [3]
+      vsnprintf: [3]
+      syslog: [2]
+      vsyslog: [2]
+      err: [2]
+      warn: [1]
+    sink_operators: {}
+    source_calls: []
+    sanitizer: null
+    sanitizer_errors: []
+    codeql_queries:
+      - Security/CWE/CWE-134

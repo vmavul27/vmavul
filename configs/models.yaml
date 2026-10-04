@@ -1,0 +1,53 @@
+# Model pool (Section 3.4).
+#   * Bootstrapping uses two API-accessed LLMs (OpenAI GPT-5.6 and Anthropic Opus 4.8).
+#   * Coverage Expansion and Densification use four locally deployed LLMs.
+#   * In each iteration the generator is drawn uniformly at random from the pool of the
+#     current stage; the refiner is drawn uniformly at random from the models of the same
+#     stage pool whose `family` differs from the generator's family.
+# Every endpoint is OpenAI-compatible except `provider: anthropic`.  Endpoints and keys
+# are read from environment variables; nothing is hard-coded.
+pools:
+  bootstrap:
+    - name: gpt-5.6
+      family: gpt
+      provider: openai
+      model_id: ${VMAVUL_GPT_MODEL_ID:-gpt-5.6}
+      base_url: ${VMAVUL_OPENAI_BASE_URL:-https://api.openai.com/v1}
+      api_key_env: OPENAI_API_KEY
+      token_param: max_completion_tokens
+    - name: opus-4.8
+      family: anthropic
+      provider: anthropic
+      model_id: ${VMAVUL_ANTHROPIC_MODEL_ID:-claude-opus-4-8}
+      base_url: ${VMAVUL_ANTHROPIC_BASE_URL:-https://api.anthropic.com}
+      api_key_env: ANTHROPIC_API_KEY
+  local:
+    - name: qwen3.6-35b-a3b
+      family: qwen
+      provider: openai
+      model_id: Qwen/Qwen3.6-35B-A3B
+      base_url: ${VMAVUL_QWEN_URL:-http://localhost:8001/v1}
+      api_key_env: VMAVUL_LOCAL_API_KEY
+    - name: gemma-4-31b-it
+      family: gemma
+      provider: openai
+      model_id: google/gemma-4-31b-it
+      base_url: ${VMAVUL_GEMMA_URL:-http://localhost:8002/v1}
+      api_key_env: VMAVUL_LOCAL_API_KEY
+    - name: deepseek-r1-distill-llama-8b
+      family: deepseek
+      provider: openai
+      model_id: deepseek-ai/DeepSeek-R1-Distill-Llama-8B
+      base_url: ${VMAVUL_DEEPSEEK_URL:-http://localhost:8003/v1}
+      api_key_env: VMAVUL_LOCAL_API_KEY
+    - name: glm-4.7-flash
+      family: glm
+      provider: openai
+      model_id: zai-org/GLM-4.7-Flash
+      base_url: ${VMAVUL_GLM_URL:-http://localhost:8004/v1}
+      api_key_env: VMAVUL_LOCAL_API_KEY
+# Which pool each scheduling stage draws from.
+stage_pools:
+  bootstrapping: bootstrap
+  coverage_expansion: local
+  densification: local

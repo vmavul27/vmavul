@@ -1,0 +1,33 @@
+Create one C/C++ vulnerable function with the following manifestation.
+
+{% if requirements -%}
+Target manifestation descriptor:
+{% for r in requirements %}- {{ r }}
+{% endfor %}
+{%- else -%}
+No specific manifestation is required.
+{%- endif %}
+
+{% if references %}
+Reference real-world vulnerable functions (for realistic subsystem and style only --
+do not copy them, reuse their identifiers, or reproduce their specific bug):
+{% for ref in references %}
+--- reference {{ loop.index }}{% if ref.cwe %} (CWE {{ ref.cwe }}){% endif %} ---
+{{ ref.code }}
+{% endfor %}
+{% endif %}
+
+{% if memory %}
+Lessons from previous successful refinements (apply them pre-emptively):
+{% for m in memory %}- When {{ m.failed_check }} failed: {{ m.lesson }}
+{% endfor %}
+{% endif %}
+
+{% if vary %}
+Produce a NEW variant of the following accepted sample. {{ vary_instruction }}
+Keep it a valid, compilable vulnerable/patched pair with a working driver.
+--- sample to vary ---
+{{ vary }}
+{% endif %}
+
+Remember to output exactly the three tagged blocks.

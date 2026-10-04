@@ -1,0 +1,19 @@
+The following candidate failed the {{ failed_check }} check.
+
+{% if requirements -%}
+Target manifestation descriptor:
+{% for r in requirements %}- {{ r }}
+{% endfor %}
+{%- endif %}
+
+Candidate:
+{{ artifacts }}
+
+Diagnostics of the failed check:
+{{ diagnostics }}
+
+{{ instruction }}
+
+Output the revised candidate as exactly the three tagged blocks, followed by
+<fix_summary>one sentence describing what you changed and why, phrased as a reusable
+lesson</fix_summary>

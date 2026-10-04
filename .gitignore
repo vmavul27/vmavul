@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.egg-info/
+*.pyc
+.pytest_cache/
+# run outputs and local data (repository root only)
+/runs
+/results
+/data
+/work
+/scratch
+/workspace
+/third_party
+*.log

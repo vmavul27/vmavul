@@ -1,0 +1,31 @@
+# Complete VMAVul (Section 3).  Hyper-parameters follow Section 3.4.
+output_dir: runs/${VMAVUL_TRAIN_SET:-megavul}/vmavul
+reference_pool: data/reference_pool/${VMAVUL_TRAIN_SET:-megavul}.jsonl   # train split only
+budget: 15000
+workers: 8
+seed: 0
+models: configs/models.yaml
+sinks: configs/sinks.yaml
+prompts_dir: prompts
+hyper:
+  k_exhausted_attempts: 10
+  tau_density: 50
+  delta_min_distance: 0.2
+  r_refinement_rounds: 3
+  bootstrap_cells_per_family: 3
+  bootstrap_patience: 3
+generation:
+  n_references: 2
+  n_memory_entries: 3
+  temperature: 0.8
+  max_tokens: 4096
+tools:
+  clang: ${VMAVUL_CLANG:-clang-17}
+  codeql: ${VMAVUL_CODEQL:-codeql}
+  codeql_cpp_queries: ${VMAVUL_CODEQL_CPP_QUERIES:-}
+  joern_home: ${VMAVUL_JOERN_HOME:-}
+  joern_servers: 2
+  embed_model: ${VMAVUL_EMBED_MODEL:-microsoft/unixcoder-base}
+  embed_device: ${VMAVUL_EMBED_DEVICE:-cpu}
+  sandbox: ${VMAVUL_SANDBOX:-bwrap}     # fail-closed bubblewrap jail for runtime checks
+  sandbox_command: []

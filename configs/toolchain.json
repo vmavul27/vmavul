@@ -1,0 +1,18 @@
+{
+  "schema": "vmavul.toolchain.v1",
+  "python": ">=3.10",
+  "external": {
+    "clang": {"version": "17.0.6", "env": "VMAVUL_CLANG"},
+    "compiler-rt (ASan/UBSan/LSan)": {"version": "17.0.6"},
+    "codeql": {"version": "2.25.4", "env": "VMAVUL_CODEQL",
+               "product_sha": "8d8b5395c431b7d14c19bf1874dc90b6dec7bbd0"},
+    "codeql/cpp-queries": {"version": "1.6.2", "env": "VMAVUL_CODEQL_CPP_QUERIES",
+                           "build_sha": "6a95251206538e6a7a9c9dc41feb78ce77bdda78"},
+    "joern": {"version": "4.0.547", "env": "VMAVUL_JOERN_HOME",
+              "jar_sha256": "5a37a497505b1195b6a722e07a30c42008f4506ceb3bd18356bf2cfffc74f35d"},
+    "java": {"version": "17"},
+    "lizard": {"version": "1.23.0"},
+    "bubblewrap": {"version": ">=0.6", "note": "fail-closed sandbox for runtime checks"},
+    "unixcoder": {"model": "microsoft/unixcoder-base", "env": "VMAVUL_EMBED_MODEL"}
+  }
+}
